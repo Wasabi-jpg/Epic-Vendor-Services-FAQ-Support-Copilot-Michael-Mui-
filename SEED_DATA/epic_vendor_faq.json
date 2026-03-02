@@ -1,0 +1,74 @@
+[
+    {
+        "category": "General",
+        "question":"What is Vendor Services?",
+        "answer":"Vendor Services is a support program offered by Epic to developers who are looking to integrate their product with Epic software.",
+        "source_url": "https://vendorservices.epic.com/FAQ/Index?Question=1072&Category=1082"
+    },
+    {
+        "category": "General",
+        "question":"Who uses the Vendor Services website?",
+        "answer":"Developers enrolled in Vendor Services use the website to receive access to test harnesses, testing sandboxes, and tutorials. The Vendor Services website also enables Epic's customers who are interested in creating homegrown applications and interfacing those apps with their Epic software.",
+        "source_url": "https://vendorservices.epic.com/FAQ/Index?Question=1073&Category=1082"
+    },
+    {
+        "category": "Membership",
+        "question":"How do I enroll in Vendor Services?",
+        "answer":"To learn more about Vendor Services and to enroll, go to the registration page. Select the \"I'm Interested\" button at the bottom of the page and complete the registration form to get started. Epic's customer organizations are automatically provisioned accounts to the Vendor Services website.",
+        "source_url": "https://vendorservices.epic.com/FAQ/Index?Question=1075&Category=1083"
+    },
+    {
+        "category": "Membership",
+        "question":"How much does it cost to subscribe to Vendor Services?",
+        "answer":"Vendor Services pricing starts at $1,900 per year for vendors. For full pricing information, log in or complete the registration form to get started.",
+        "source_url": "https://vendorservices.epic.com/FAQ/Index?Question=1076&Category=1083"
+    },
+    {
+        "category": "Data Exchange Capabilities",
+        "question":"How does Epic support data exchange with other systems?",
+        "answer":"To enable our customers to extend their Epic software and to interoperate with homegrown and third-party applications, hardware, and services, Epic software supports hundreds of standards-based interfaces, APIs, and other interoperability technologies, as well as Epic-specific technologies that extend interoperability beyond current standards. Our catalog of public and industry-standards-based APIs can be found on open.epic and are available to app developers at no additional cost. Epic is vendor-neutral, and no special relationship is required to develop or deploy an app. On open.epic, developers can use public documentation, sandbox, self-service tools to register apps, connect to customer systems, and go live, all without needing Epic's involvement.",
+        "source_url": "https://vendorservices.epic.com/FAQ/Index?Question=1088&Category=1084"
+    },
+    {
+        "category": "Data Exchange Capabilities",
+        "question":"What APIs does Epic offer?",
+        "answer":"Epic supports hundreds of standards-based and Epic-defined APIs across the spectrum of clinical, specialty, registration, scheduling, financial, patient experience and mobile applications that Epic offers. Our API library includes substantial support for industry standards, such as FHIR, SMART on FHIR, and CDS Hooks, as well as APIs specific to Epic's software. We support both read and write operations. You can access our Specifications page and Self-Service Private API Catalog to see the APIs available to you.",
+        "source_url": "https://vendorservices.epic.com/FAQ/Index?Question=1089&Category=1084"
+    },
+    {
+        "category": "Data Exchange Capabilities",
+        "question":"Does Epic support analytics and machine learning vendors?",
+        "answer":"Yes, Epic enables other vendors to build applications, including analytics applications, on top of our Caboodle data warehouse product using a feature called Kit. Additionally, Epic offers a cloud-based cognitive computing platform that enables our customers to deploy predictive models and embed guidance directly within Epic workflows. Contact a Vendor Services TS or use the \"Contact\" form located at the bottom of this page in the website footer to learn more.",
+        "source_url": "https://vendorservices.epic.com/FAQ/Index?Question=1097&Category=1084"
+    },
+    {
+        "category": "Website Assistance",
+        "question":"How do I get a Vendor Services user account?",
+        "answer":"If you work for one of Epic's customers, you log in using your UserWeb account. If you do not have a UserWeb account yet, you may register here. If your company has not yet enrolled in Vendor Services, begin the enrollment process to get started. If your company has already enrolled in Vendor Services, your company's admin user provisions user accounts to your staff. If you're unsure who your admin user is, fill out the registration form using your work email address to send a request to your admin user.",
+        "source_url": "https://vendorservices.epic.com/FAQ/Index?Question=1119&Category=1087"
+    },
+    {
+        "category": "Website Assistance",
+        "question":"How do I log in to the Vendor Services website?",
+        "answer":"If you work for an organization that participates in Vendor Services and you have already been provisioned a Vendor Services user account, then select Vendor Services from the Login menu and enter your Vendor Services credentials. If you work for one of Epic's customers, you log in using your UserWeb account. Select UserWeb from the Login menu and enter your credentials if requested. If your organization uses UserWeb single-sign on, then you'll use your Windows username and password if prompted.",
+        "source_url": "https://vendorservices.epic.com/FAQ/Index?Question=1120&Category=1087"
+    },
+    {
+        "category": "Website Assistance",
+        "question":"I'm having trouble logging into the Vendor Services website. What do I do?",
+        "answer":"If you work for a Vendor Services participant or prospective participant and have already been provisioned a Vendor Services user account, then select Vendor Services from the Login menu. Then select \"Forgot username or password\". If you still have difficulty accessing your account, contact a Vendor Services TS or use the \"Contact\" form located at the bottom of this page in the website footer for assistance. If you work for one of Epic's customers, you log into the Vendor Services website using your UserWeb account. If your organization uses UserWeb single-sign on, then follow your organization's process for resetting your Windows username and password. Otherwise, go to the UserWeb login page and select \"Forgot username or password\" for instructions. If you still have difficulty accessing your account, staff from Epic customers should contact UserWeb Support. Staff from Vendor Services members should contact vendorservices@epic.com.",
+        "source_url": "https://vendorservices.epic.com/FAQ/Index?Question=1121&Category=1087"
+    },
+    {
+        "category": "Implementation",
+        "question":"Who will be involved in implementing my app?",
+        "answer":"There are three main groups you'll work with during implementation: Operations: The stakeholders who directly represent end users. Often department leads, super users, and clinical representatives like physician/nurse champions. IT: Primary technical support for Epic end users. This is commonly Epic certified analysts who work directly for the organization. Epic Support: Epic Technical and Implementation Services staff from Epic who support the IT staff from the organization. They will be pulled in as needed by the other two groups. Our Collaborate with Epic Community Members page provides guidance on how to prepare for and collaborate with all stakeholders at your prospective Epic Community Member. Ensure that you are being agile and flexible with each new integration, even if you have an existing integration design that has worked for other organizations.",
+        "source_url": "https://vendorservices.epic.com/FAQ/Index?Question=9797&Category=1091"
+    },
+    {
+        "category": "Contact Us",
+        "question":"What is Epic's contact information?",
+        "answer":"1979 Milky Way Verona, Wisconsin 53593 Phone: 608-271-9000 For additional contact information, visit Epic.com.",
+        "source_url": "https://vendorservices.epic.com/FAQ/Index?Question=1126&Category=1088"
+    }
+]

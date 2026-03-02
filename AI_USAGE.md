@@ -1,0 +1,1 @@
+- Used Google Gemini for determining and planning project structure.
