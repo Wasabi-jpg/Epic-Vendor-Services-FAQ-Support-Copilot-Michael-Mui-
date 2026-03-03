@@ -2,12 +2,38 @@
 SymbolicHealthAI's Take Home
 
 
-## Commands to Run:
-- Download Ollama from website (Run OllamaSetup.exe /DIR=”<insert custom directory>”)
-- Set environment variable OLLAMA_MODELS to be in D:<insert custom directory>
-- Reset comp (fix)
-- In cmd line: ollama pull llama3.2:1b (Should have model in custom directory)
-- 
+## Commands to Run
+
+**Prerequisites (one-time):**
+1. Install [Ollama](https://ollama.com). On Windows, e.g.: `OllamaSetup.exe /DIR="<custom directory>"`.
+2. Set `OLLAMA_MODELS` to that directory if using a custom location.
+3. Pull the model: `ollama pull llama3.2:1b`
+
+**Install dependencies (from project root):**
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+**Start the app:**
+```bash
+uvicorn app.main:app --reload
+```
+
+**Run tests:**
+```bash
+pytest
+```
+*(Tests and TESTING.md to be added.)*
+
+**Test engine and memory locally (from project root, with venv activated):**
+```bash
+python -m app.memory
+python -m app.engine
+```
+- `app.memory` runs built-in sanity checks (no Ollama needed).
+- `app.engine` loads the FAQ, runs retrieval for a sample query, then calls Ollama for an answer with sources (requires Ollama running and `llama3.2:1b` pulled).
 
 ## Development Priorities:
 1. Core feature appears to be using an AI model to refer to the vendor FAQ on Epic's site in a JSON format. (Chat itself could theoretically be kept to the terminal out of prioritizing functionality).
@@ -32,7 +58,16 @@ epic-support-copilot/
 └── requirements.txt        # Project dependencies
 ```
 
-- Creating JSON dataset
+- Created JSON dataset
+
+- Created engine for model
+    - created json data loader to load from SEED_DATA/epic_vendor_faq.json
+    - created scoring function based on user query and faq content
+    - created universal prompt with dynamic context based on scoring function results 
+
+- Created memory component for model
+
+- 
 
 ## Development Plan:
 
