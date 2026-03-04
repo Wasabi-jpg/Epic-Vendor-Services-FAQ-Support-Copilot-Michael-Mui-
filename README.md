@@ -1,6 +1,10 @@
 # Epic-Vendor-Services-FAQ-Support-Copilot-Michael-Mui-
 SymbolicHealthAI's Take Home
 
+## Questions for Stand Up
+- How to fine tune AI model? Sounds so dry. What are the benchmarks?
+- Not sure how to show that memory was used. Namely, prior turns in the conversation.
+- Can you explain 'Handle empty state, invalid input, retrieval misses'?
 
 ## Commands to Run
 
@@ -67,7 +71,16 @@ epic-support-copilot/
 
 - Created memory component for model
 
-- 
+- Created backend API routes
+
+- Creating/Changing min_score by adding param to run_query, also adjust in main.py's run_query call 
+
+- Create Basic UI
+
+- Eliminate unused code componenents
+
+- Correct AI behavior
+    - Irrelevance (what's the capital of France?) -> fix via adjusting min_score in engine.py (adjust run_query to use new param)
 
 ## Development Plan:
 

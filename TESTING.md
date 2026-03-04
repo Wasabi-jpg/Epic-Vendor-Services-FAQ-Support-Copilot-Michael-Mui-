@@ -1,0 +1,4 @@
+- Test question found on FAQ -> Goal should be to get that entry
+- Test asking for password -> Goal should be to raise guardrails
+- Test empty queries
+- Test memory used
