@@ -2,7 +2,7 @@
 SymbolicHealthAI's Take Home
 
 ## Questions for Stand Up
-- How to fine tune AI model? Sounds so dry. What are the benchmarks?
+- How to fine tune AI model? What are the benchmarks? How concise?
 - Not sure how to show that memory was used. Namely, prior turns in the conversation.
 - Can you explain 'Handle empty state, invalid input, retrieval misses'?
 

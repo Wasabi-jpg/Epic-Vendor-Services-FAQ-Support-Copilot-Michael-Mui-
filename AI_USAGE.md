@@ -5,4 +5,4 @@
 context into how I wanted questions and faq matching should be done.
 - Cursor also organized "Commands to run" for later setup.
 - Gemini helped plan main.py, while I coded it.
-
+- Gemini used for index.html, for the sake of quick testing and getting basic UI.
