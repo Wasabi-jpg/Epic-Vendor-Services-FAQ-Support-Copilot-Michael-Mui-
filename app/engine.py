@@ -45,6 +45,32 @@ def score_entry(query: str, entry: dict) -> float:
     return overlap / len(query_words) if query_words else 0.0
 
 
+def score_query_with_history(
+    current_query: str,
+    conversation_history: list[dict] | None,
+    threshold: float = 0.2,
+) -> bool:
+    """
+    Decide whether to use conversation history based on topic continuity.
+    Considers the past 6 turns, scores current query against prior user messages only.
+    Returns True if max overlap with any of the last 3 user messages >= threshold.
+    """
+    if not conversation_history or not current_query: # Potential problem? Missing query, what happens?
+        return False
+    recent = conversation_history[-6:]
+    user_contents = [t["content"] for t in recent if t.get("role") == "user"]
+    prior_user_queries = user_contents[-3:]  # at most 3 prior user messages
+    if not prior_user_queries:
+        return False
+    scores = []
+    for prior_text in prior_user_queries:
+        # Reuse score_entry: treat prior user message as a minimal "entry"
+        entry = {"category": "", "question": prior_text, "answer": ""}
+        scores.append(score_entry(current_query, entry))
+    topic_score = max(scores) if scores else 0.0
+    return topic_score >= threshold
+
+
 def retrieve(
     query: str,
     faq_data: list[dict] | None = None,
@@ -139,10 +165,18 @@ def run_query(
     if faq_data is None:
         faq_data = load_faq()
     retrieved = retrieve(query, faq_data=faq_data, top_k=top_k, min_score=min_score)
+    use_history = score_query_with_history(query, conversation_history)
+    if use_history:
+        return answer_with_sources(
+            query,
+            retrieved,
+            conversation_history=conversation_history,
+            model=model,
+        )
     return answer_with_sources(
         query,
         retrieved,
-        conversation_history=conversation_history,
+        conversation_history=[],
         model=model,
     )
 

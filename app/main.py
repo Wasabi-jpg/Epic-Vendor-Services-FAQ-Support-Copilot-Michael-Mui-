@@ -34,7 +34,7 @@ def read_root():
 def send_query(user_query: Query):
     # Prep history of chat
     
-    chat_history = get_recent_turns(10)
+    chat_history = get_recent_turns(6) # Adjustable chat history of user and model turns
 
     did_memory_use = memory_used()
     # run_query(), so ask the model, returns a dict with keys "answer", "sources", "model_used"
@@ -44,6 +44,7 @@ def send_query(user_query: Query):
     faq_data: list[dict] | None = None,
     model: str = "llama3.2:1b",
     top_k: int = 3,
+    min_score: float = 0.0 -> for the sake of retrieving the faq entries
     '''
     res = run_query(user_query.query, conversation_history=chat_history, faq_data=json_faq, min_score=0.2)
 

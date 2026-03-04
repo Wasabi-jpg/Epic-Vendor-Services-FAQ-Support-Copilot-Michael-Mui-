@@ -2,9 +2,17 @@
 SymbolicHealthAI's Take Home
 
 ## Questions for Stand Up
-- How to fine tune AI model? What are the benchmarks? How concise?
+- How to fine tune AI model? I seem to get responses that are irrelevant OR violate requirements.
+- Can you clarify what TESTING.md is for?
 - Not sure how to show that memory was used. Namely, prior turns in the conversation.
 - Can you explain 'Handle empty state, invalid input, retrieval misses'?
+
+Notes from Stand Up:
+- Plan Mode over agent mode
+- Make sure LLM is doing heavy lifting of RAG (highlight tradeoffs, currently light weight and inacurrate)
+- Push LLM earlier in stack of process
+- Goal from take home: spirit is to figure out my own ineffiencies in workflow and use AI to fix that
+- Guardrail testing is most important in AI prompting, also don't forget regression testing.
 
 ## Commands to Run
 
