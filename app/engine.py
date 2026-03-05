@@ -162,7 +162,7 @@ def score_query_with_history(
 
 
 # Default model: larger model for reasoning over full FAQ (Option C source grounding).
-_DEFAULT_MODEL = "llama3.1:8b"
+_DEFAULT_MODEL = "llama3.2:3b"# larger model: "llama3.1:8b"
 
 
 def answer_with_sources(

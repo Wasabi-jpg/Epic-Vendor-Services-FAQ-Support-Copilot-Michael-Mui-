@@ -19,7 +19,7 @@ Notes from Stand Up:
 **Prerequisites (one-time):**
 1. Install [Ollama](https://ollama.com). On Windows, e.g.: `OllamaSetup.exe /DIR="<custom directory>"`.
 2. Set `OLLAMA_MODELS` to that directory if using a custom location.
-3. Pull the model: `ollama pull llama3.1:8b`  
+3. Pull the model: `ollama pull llama3.2:3b`  
    The app sends the full FAQ to the model and uses model-cited source IDs for grounding (Option C).
 
 **Install dependencies (from project root):**
@@ -98,9 +98,15 @@ epic-support-copilot/
 
 ## Development Plan:
 
-- Determine Project Structure
-- pip install ollama, fastapi, uvicorn, save to requirements.txt.
-- Create dataset for context (Grab from Epic Vendor's FAQ) and input into SEED_DATA/epic_vendor_faq.json.
-- focus on ollama logic and faq search (engine.py and memory.py) and interact via terminal for testing.
-- upon completing engine.py and memory.py, focus on UI (index.html) and backend (main.py) for routing user chat with model.
+- Determine Project Structure (DONE)
+- pip install ollama, fastapi, uvicorn, pytest, save to requirements.txt. (DONE)
+- Create dataset for context (Grab from Epic Vendor's FAQ) and input into SEED_DATA/epic_vendor_faq.json. (DONE)
+- focus on ollama logic and faq search (engine.py and memory.py) and interact via terminal for testing. (DONE)
+- upon completing engine.py and memory.py, focus on UI (index.html) and backend (main.py) for routing user chat with model. (DONE)
+
+- Test model performance (check testing)
+- Test memory.py via testing suite
+- 
+- Clean up set up for easy reader digestion. (for the <= 10 min setup)
+- 
 
