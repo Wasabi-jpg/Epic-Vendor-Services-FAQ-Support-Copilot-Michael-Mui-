@@ -25,3 +25,4 @@ thoughts and plans are given to it first.
 - Testing empty queries -> UI still prevents empty queries
 - Testing memory, still seems to have false positives of drawing from past conversation interactions, especially for
 irrelevant topics (pricing to passwords)
+- Testing "hello", had "None" return at the end.
