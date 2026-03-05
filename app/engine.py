@@ -22,6 +22,76 @@ def load_faq(path: Path | None = _FAQ_PATH) -> list[dict]:
         return json.load(f)
 
 
+def format_faq_for_prompt(faq_data: list[dict]) -> str:
+    """
+    Format the full FAQ into one prompt-ready string. Each entry gets a 1-based ID [i].
+    No filtering; used so the model sees all entries and can cite IDs for sources (Option C).
+    """
+    parts = []
+    for i, e in enumerate(faq_data, 1):
+        cat = e.get("category", "")
+        q = e.get("question", "")
+        ans = e.get("answer", "")
+        parts.append(f"[{i}] ({cat}) Q: {q}\nA: {ans}")
+    return "\n\n".join(parts) if parts else ""
+
+
+def parse_answer_and_sources(model_output: str) -> tuple[str, list[int]]:
+    """
+    Extract answer text and source IDs from model output.
+    Expected format: "Answer: <text>\\nSource IDs: 1, 3" or "Source IDs: 1, 3\\nAnswer: <text>".
+    Fallback: return (whole response, []).
+    """
+    if not model_output or not model_output.strip():
+        return ("", [])
+    text = model_output.strip()
+    source_ids: list[int] = []
+    # Try "Source IDs: 1, 3" or "Sources: 1, 3" (flexible)
+    for pattern in [
+        r"[Ss]ource\s*IDs?\s*:\s*([\d\s,]+)",
+        r"[Ss]ources?\s*:\s*([\d\s,]+)",
+    ]:
+        m = re.search(pattern, text, re.IGNORECASE)
+        if m:
+            raw = m.group(1)
+            for part in raw.replace(",", " ").split():
+                if part.isdigit():
+                    source_ids.append(int(part))
+            source_ids = list(dict.fromkeys(source_ids))  # preserve order, dedupe
+            break
+    # Remove the Source IDs line from text to get answer only
+    answer = text
+    for pattern in [
+        r"\n?[Ss]ource\s*IDs?\s*:\s*[\d\s,]+\s*",
+        r"\n?[Ss]ources?\s*:\s*[\d\s,]+\s*",
+    ]:
+        answer = re.sub(pattern, "\n", answer, flags=re.IGNORECASE)
+    # Extract "Answer: ..." if present
+    answer_m = re.search(r"[Aa]nswer\s*:\s*(.+)", answer, re.DOTALL)
+    if answer_m:
+        answer = answer_m.group(1).strip()
+    else:
+        answer = re.sub(r"^[Aa]nswer\s*:\s*", "", answer).strip()
+    if not answer:
+        answer = text.strip()
+    return (answer, source_ids)
+
+
+def build_sources_from_ids(faq_data: list[dict], source_ids: list[int]) -> list[dict]:
+    """Map 1-based FAQ entry IDs to list of {category, question, source_url}. Invalid IDs skipped."""
+    n = len(faq_data)
+    sources = []
+    for i in source_ids:
+        if 1 <= i <= n:
+            e = faq_data[i - 1]
+            sources.append({
+                "category": e.get("category", ""),
+                "question": e.get("question", ""),
+                "source_url": e.get("source_url", ""),
+            })
+    return sources
+
+
 def _normalize(text: str) -> str:
     """Lowercase and collapse whitespace for scoring."""
     return " ".join(re.sub(r"[^a-z0-9\s]", "", text.lower()).split())
@@ -71,57 +141,59 @@ def score_query_with_history(
     return topic_score >= threshold
 
 
-def retrieve(
-    query: str,
-    faq_data: list[dict] | None = None,
-    top_k: int = 3,
-    min_score: float = 0.0,
-) -> list[dict]:
-    """
-    Return top_k FAQ entries most relevant to the query.
-    Each returned dict includes the original entry; optionally add a "score" key for debugging.
-    """
-    if faq_data is None:
-        faq_data = load_faq()
-    if not query or not faq_data:
-        return []
-    scored = [(e, score_entry(query, e)) for e in faq_data]
-    scored = [(e, s) for e, s in scored if s >= min_score]
-    scored.sort(key=lambda x: -x[1])
-    return [e for e, _ in scored[:top_k]]
+# def retrieve(
+#     query: str,
+#     faq_data: list[dict] | None = None,
+#     top_k: int = 3,
+#     min_score: float = 0.0,
+# ) -> list[dict]:
+#     """
+#     Return top_k FAQ entries most relevant to the query.
+#     Each returned dict includes the original entry; optionally add a "score" key for debugging.
+#     """
+#     if faq_data is None:
+#         faq_data = load_faq()
+#     if not query or not faq_data:
+#         return []
+#     scored = [(e, score_entry(query, e)) for e in faq_data]
+#     scored = [(e, s) for e, s in scored if s >= min_score]
+#     scored.sort(key=lambda x: -x[1])
+#     return [e for e, _ in scored[:top_k]]
+
+
+# Default model: larger model for reasoning over full FAQ (Option C source grounding).
+_DEFAULT_MODEL = "llama3.1:8b"
 
 
 def answer_with_sources(
     query: str,
-    retrieved_entries: list[dict],
+    faq_data: list[dict],
     conversation_history: list[dict] | None = None,
-    model: str = "llama3.2:1b",
+    model: str = _DEFAULT_MODEL,
 ) -> dict:
     """
-    Call Ollama with FAQ context (and optional prior turns) and return answer + sources.
-    retrieved_entries: list of most relevant faq entries (hits) used to send to the model.
+    Call Ollama with full FAQ context (formatted). Model must output Answer and Source IDs.
+    faq_data: full list of FAQ entries (all sent; no retrieval filter).
     conversation_history: list of {"role": "user"|"assistant", "content": "..."}
     Returns: {"answer": str, "sources": [{"category", "question", "source_url"}]}
+    Source grounding (Option C): sources come from model-cited entry IDs.
     """
-    # import ollama
+    faq_context = format_faq_for_prompt(faq_data)
+    if not faq_context:
+        return {"answer": "No FAQ data available.", "sources": []}
 
-    # Build context from retrieved FAQ entries
-    context_parts = []
-    for i, e in enumerate(retrieved_entries, 1):
-        cat = e.get("category", "")
-        q = e.get("question", "")
-        ans = e.get("answer", "")
-        context_parts.append(f"[{i}] ({cat}) Q: {q}\nA: {ans}")
-    faq_context = "\n\n".join(context_parts) if context_parts else "No relevant FAQ entries found."
+    system = """You are an Epic Vendor Services support agent.
+Answer only using the provided FAQ context. Be concise.
+If the context does not contain enough information, say so and suggest the user rephrase or contact support.
+For login or password issues, direct users to use "Forgot username or password" or contact their admin / UserWeb Support / vendorservices@epic.com—do not invent reset steps.
 
-    system = """You are an Epic Vendor Services support agent. 
-    Answer only using the provided FAQ context. Be concise. 
-    If the context does not contain enough information, say so and suggest the user rephrase or contact support. 
-    For login or password issues, direct users to use "Forgot username or password" or contact their admin / UserWeb Support / vendorservices@epic.com—do not invent reset steps."""
+You must reply in this exact format:
+Answer: <your answer here>
+Source IDs: <comma-separated list of FAQ entry numbers you used, e.g. 1, 3>"""
 
     user_block = ""
     if conversation_history:
-        for turn in conversation_history[-6:]:  # last 3 exchanges 
+        for turn in conversation_history[-6:]:
             role = turn.get("role", "")
             content = turn.get("content", "")
             user_block += f"({role}): {content}\n"
@@ -129,24 +201,18 @@ def answer_with_sources(
     else:
         user_block = query
 
-    prompt = f"""FAQ context:\n{faq_context}\n\nConversation so far:\n{user_block}\n\n System Constraints:\n{system}"""
+    prompt = f"""FAQ (each entry has an ID in brackets; cite these IDs in Source IDs):\n{faq_context}\n\nConversation so far:\n{user_block}"""
 
-    messages = [{"role": "user", "content": prompt}]
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": prompt}]
     response = ollama.chat(model=model, messages=messages)
-    answer = (response.get("message") or {}).get("content", "").strip()
+    raw = (response.get("message") or {}).get("content", "").strip()
 
-    sources = [
-        {
-            "category": e.get("category", ""),
-            "question": e.get("question", ""),
-            "source_url": e.get("source_url", ""),
-        }
-        for e in retrieved_entries
-    ]
+    answer, source_ids = parse_answer_and_sources(raw)
+    sources = build_sources_from_ids(faq_data, source_ids)
 
     return {
         "answer": answer,
-        "sources": sources
+        "sources": sources,
     }
 
 
@@ -154,29 +220,20 @@ def run_query(
     query: str,
     conversation_history: list[dict] | None = None,
     faq_data: list[dict] | None = None,
-    model: str = "llama3.2:1b",
-    top_k: int = 3,
-    min_score: float = 0.0,
+    model: str = _DEFAULT_MODEL,
 ) -> dict:
     """
-    One-shot: load FAQ (if needed), retrieve, then answer with sources.
-    For use by API or terminal testing.
+    One-shot: load FAQ (if needed), format full FAQ, then answer with sources.
+    No retrieval for context selection; full FAQ is sent. Sources from model-cited IDs (Option C).
     """
     if faq_data is None:
         faq_data = load_faq()
-    retrieved = retrieve(query, faq_data=faq_data, top_k=top_k, min_score=min_score)
     use_history = score_query_with_history(query, conversation_history)
-    if use_history:
-        return answer_with_sources(
-            query,
-            retrieved,
-            conversation_history=conversation_history,
-            model=model,
-        )
+    history = conversation_history if use_history else None
     return answer_with_sources(
         query,
-        retrieved,
-        conversation_history=[],
+        faq_data,
+        conversation_history=history,
         model=model,
     )
 
@@ -188,20 +245,10 @@ if __name__ == "__main__":
     print(f"Loaded {len(faq)} entries.\n")
 
     test_query = "How do I log in to Vendor Services?"
-    print(f"Retrieving for: {test_query!r}")
-    hits = retrieve(test_query, faq_data=faq, top_k=3)
-    for i, e in enumerate(hits, 1):
-        print(f"  {i}. [{e.get('category')}] {e.get('question')}")
-
-    print("\nCalling Ollama for answer with sources...")
-    result = answer_with_sources(test_query, hits, conversation_history=None)
+    print(f"Calling run_query (full FAQ, model-cited sources) for: {test_query!r}")
+    result = run_query(test_query, conversation_history=None, faq_data=faq)
     print("Answer:", result["answer"][:300] + ("..." if len(result["answer"]) > 300 else ""))
     print("Sources:", result["sources"])
-
-    print("\nTesting run_query()")
-    rq_result = run_query("What is Vendor Services")
-    print(f"Answer: {rq_result["answer"]}\n")
-    print(f"Sources: {result["sources"]}")
 
 
     

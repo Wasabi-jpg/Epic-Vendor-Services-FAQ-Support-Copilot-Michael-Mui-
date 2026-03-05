@@ -19,7 +19,8 @@ Notes from Stand Up:
 **Prerequisites (one-time):**
 1. Install [Ollama](https://ollama.com). On Windows, e.g.: `OllamaSetup.exe /DIR="<custom directory>"`.
 2. Set `OLLAMA_MODELS` to that directory if using a custom location.
-3. Pull the model: `ollama pull llama3.2:1b`
+3. Pull the model: `ollama pull llama3.1:8b`  
+   The app sends the full FAQ to the model and uses model-cited source IDs for grounding (Option C).
 
 **Install dependencies (from project root):**
 ```bash
@@ -45,7 +46,7 @@ python -m app.memory
 python -m app.engine
 ```
 - `app.memory` runs built-in sanity checks (no Ollama needed).
-- `app.engine` loads the FAQ, runs retrieval for a sample query, then calls Ollama for an answer with sources (requires Ollama running and `llama3.2:1b` pulled).
+- `app.engine` loads the FAQ, formats it for the prompt, and calls Ollama for an answer with model-cited sources (requires Ollama running and `llama3.1:8b` pulled).
 
 ## Development Priorities:
 1. Core feature appears to be using an AI model to refer to the vendor FAQ on Epic's site in a JSON format. (Chat itself could theoretically be kept to the terminal out of prioritizing functionality).
@@ -89,6 +90,11 @@ epic-support-copilot/
 
 - Correct AI behavior
     - Irrelevance (what's the capital of France?) -> fix via adjusting min_score in engine.py (adjust run_query to use new param)
+
+- Use a new model
+    - allows for more context, send FAQ seed data into model with user query
+
+    
 
 ## Development Plan:
 

@@ -32,33 +32,27 @@ def read_root():
 
 @app.post("/chat", response_model=dict)
 def send_query(user_query: Query):
-    # Prep history of chat
-    
-    chat_history = get_recent_turns(6) # Adjustable chat history of user and model turns
+    query_text = (user_query.query or "").strip()
+    if not query_text:
+        return {
+            "answer": "Please ask a question about Epic Vendor Services.",
+            "sources": [],
+            "memory_used": memory_used(),
+        }
 
+    chat_history = get_recent_turns(6)
     did_memory_use = memory_used()
-    # run_query(), so ask the model, returns a dict with keys "answer", "sources", "model_used"
-    ''' run_query():
-    query: str,
-    conversation_history: list[dict] | None = None,
-    faq_data: list[dict] | None = None,
-    model: str = "llama3.2:1b",
-    top_k: int = 3,
-    min_score: float = 0.0 -> for the sake of retrieving the faq entries
-    '''
-    res = run_query(user_query.query, conversation_history=chat_history, faq_data=json_faq, min_score=0.2)
 
-    res_ans = res['answer']
-    res_sources = res['sources']
-    
+    res = run_query(query_text, conversation_history=chat_history, faq_data=json_faq)
+    res_ans = res["answer"]
+    res_sources = res["sources"]
 
-    add_turn(role='user', content=user_query.query)
-    add_turn(role='assistant', content=res_ans)
+    add_turn(role="user", content=query_text)
+    add_turn(role="assistant", content=res_ans)
 
     return {
-        'answer': res_ans,
-        'sources' : res_sources, # Has the grounding info for source URLs
-        # Not sure how to represent memory being used. Check below?
-        'memory_used': did_memory_use # True if there is at least 1 prior turn. TODO: Represent in UI
+        "answer": res_ans,
+        "sources": res_sources,
+        "memory_used": did_memory_use,
     }
 
