@@ -1,12 +1,6 @@
 # Epic-Vendor-Services-FAQ-Support-Copilot-Michael-Mui-
 SymbolicHealthAI's Take Home
 
-## Questions for Stand Up
-- How to fine tune AI model? I seem to get responses that are irrelevant OR violate requirements.
-- Can you clarify what TESTING.md is for?
-- Not sure how to show that memory was used. Namely, prior turns in the conversation.
-- Can you explain 'Handle empty state, invalid input, retrieval misses'?
-
 Notes from Stand Up:
 - Plan Mode over agent mode
 - Make sure LLM is doing heavy lifting of RAG (highlight tradeoffs, currently light weight and inacurrate)
@@ -17,10 +11,9 @@ Notes from Stand Up:
 ## Commands to Run
 
 **Prerequisites (one-time):**
-1. Install [Ollama](https://ollama.com). On Windows, e.g.: `OllamaSetup.exe /DIR="<custom directory>"`.
-2. Set `OLLAMA_MODELS` to that directory if using a custom location.
-3. Pull the model: `ollama pull llama3.2:3b`  
-   The app sends the full FAQ to the model and uses model-cited source IDs for grounding (Option C).
+1. Install [Ollama](https://ollama.com). On Windows, e.g.: `OllamaSetup.exe /DIR="<custom directory>"`. Or just install it into your default location of installations.
+2. Set `OLLAMA_MODELS` in your environment variables to a specified model directory if using a custom location. Default is fine if you have the space ( ~ 2.0 GB)
+3. Pull the model from cmd line: `ollama pull llama3.2:3b`  
 
 **Install dependencies (from project root):**
 ```bash
@@ -29,7 +22,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-**Start the app:**
+**Start the app (while in PROJECT DIRECTORY with ACTIVE venv):**
 ```bash
 uvicorn app.main:app --reload
 ```
@@ -46,55 +39,22 @@ python -m app.memory
 python -m app.engine
 ```
 - `app.memory` runs built-in sanity checks (no Ollama needed).
-- `app.engine` loads the FAQ, formats it for the prompt, and calls Ollama for an answer with model-cited sources (requires Ollama running and `llama3.1:8b` pulled).
+- `app.engine` loads the FAQ, formats it for the prompt, and calls Ollama for an answer with model-cited sources (requires Ollama running and `llama3.2:3b` pulled).
 
-## Development Priorities:
-1. Core feature appears to be using an AI model to refer to the vendor FAQ on Epic's site in a JSON format. (Chat itself could theoretically be kept to the terminal out of prioritizing functionality).
 
-2. Secondary feature is a UI (so frontend and therefore backend is for communication between user and model).
+## Rationale for Tech Stack:
+- FastAPI + Uvicorn: Python backend that was lightweight and easier to work with, esp with Python background.
+- Ollama: local model download, no need for cloud-based models (Free models basically), and no keys.
+- llama3.2:3b model: Popularity (credibility) + space used (~2 GB) + speed (compared with 8B) + accuracy (compared with 1B)
+- Python: What I'm used to.
+- Cursor: Good at developing actionable plans and coding them up. Project scope seemed small enough for it to handle. Still required actively reviewing code from my part and understanding high level functionality.
+- Google Gemini: Good at developing high level project structure and starting off bouncing ideas.
 
-## Development Progress:
-- Determined project structure:
-```text
-epic-support-copilot/
-├── .venv/                  # Virtual environment (hidden)
-├── SEED_DATA/
-│   └── epic_vendor_faq.json # Local Q&A knowledge base
-├── app/
-│   ├── main.py             # FastAPI entry point
-│   ├── engine.py           # FAQ Search & Ollama logic
-│   └── memory.py           # Session management
-├── UI/
-│   └── index.html          # Chat interface
-├── README.md               # Setup and usage guide
-├── AI_USAGE.md             # AI assistance documentation
-└── requirements.txt        # Project dependencies
-```
+## Completion Goals + Tradeoffs:
+- 3B vs 8B: accuracy & speed, where 8B was seemingly more accurate pre-memory updates, but always too slow. 3B has the better speed and accuracy setting, even if not as accurate as 8B.
+- 3B vs 1B: accuracy & context window, where 1B was assisted by FAQ query matcher versus 3B which took in the entire FAQ as context. 3B had more reliability.
+- 
 
-- Created JSON dataset
-
-- Created engine for model
-    - created json data loader to load from SEED_DATA/epic_vendor_faq.json
-    - created scoring function based on user query and faq content
-    - created universal prompt with dynamic context based on scoring function results 
-
-- Created memory component for model
-
-- Created backend API routes
-
-- Creating/Changing min_score by adding param to run_query, also adjust in main.py's run_query call 
-
-- Create Basic UI
-
-- Eliminate unused code componenents
-
-- Correct AI behavior
-    - Irrelevance (what's the capital of France?) -> fix via adjusting min_score in engine.py (adjust run_query to use new param)
-
-- Use a new model
-    - allows for more context, send FAQ seed data into model with user query
-
-    
 
 ## Development Plan:
 
@@ -108,5 +68,5 @@ epic-support-copilot/
 - Test memory.py via testing suite
 - 
 - Clean up set up for easy reader digestion. (for the <= 10 min setup)
-- 
+- Take notes of development in markdown files.
 

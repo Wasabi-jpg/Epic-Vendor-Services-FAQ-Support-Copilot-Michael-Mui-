@@ -14,6 +14,7 @@ import pytest
 from app.engine import (
     format_faq_for_prompt,
     parse_answer_and_sources,
+    parse_memory_used,
     build_sources_from_ids,
 )
 
@@ -73,6 +74,55 @@ class TestParseAnswerAndSources:
         answer, ids = parse_answer_and_sources(raw)
         assert "Just some answer" in answer
         assert ids == []
+
+    def test_source_ids_bracket_list(self):
+        """Line 'Source IDs: [1, 3]' yields [1, 3]."""
+        raw = "Answer: Based on the FAQ.\nSource IDs: [1, 3]"
+        answer, ids = parse_answer_and_sources(raw)
+        assert ids == [1, 3]
+
+    def test_source_ids_inline_brackets(self):
+        """Inline '[1], [3]' in text yields [1, 3]."""
+        raw = "Answer: See entry [1] and [3] for details."
+        answer, ids = parse_answer_and_sources(raw)
+        assert set(ids) == {1, 3}
+        assert len(ids) == 2
+
+    def test_source_ids_mixed_line_and_inline(self):
+        """'Source IDs: 2' plus '[1], [2]' in text yields both 1 and 2 (dedupe, order preserved)."""
+        raw = "Answer: Info from [1], [2].\nSource IDs: 2"
+        answer, ids = parse_answer_and_sources(raw)
+        assert 1 in ids
+        assert 2 in ids
+        assert len(ids) == 2
+
+    def test_memory_used_line_stripped_from_answer(self):
+        """Answer text does not include the 'Memory Used: True/False' line."""
+        raw = "Answer: You can log in here.\nSource IDs: 2\nMemory Used: True"
+        answer, ids = parse_answer_and_sources(raw)
+        assert "Memory Used" not in answer
+        assert "log in" in answer
+        raw2 = "Answer: No.\nSource IDs: 1\nMemory Used: False"
+        answer2, _ = parse_answer_and_sources(raw2)
+        assert "Memory Used" not in answer2
+
+
+class TestParseMemoryUsed:
+    def test_memory_used_true_returns_true(self):
+        assert parse_memory_used("Memory Used: True") is True
+        assert parse_memory_used("foo\nMemory Used: True\nbar") is True
+
+    def test_memory_used_false_returns_false(self):
+        assert parse_memory_used("Memory Used: False") is False
+        assert parse_memory_used("foo\nMemory Used: False\nbar") is False
+
+    def test_no_memory_used_line_returns_false(self):
+        assert parse_memory_used("Just some text with no Memory Used line.") is False
+        assert parse_memory_used("") is False
+
+    def test_malformed_returns_false(self):
+        assert parse_memory_used("Memory Used: maybe") is False
+        assert parse_memory_used("memory used:") is False
 
 
 class TestBuildSourcesFromIds:

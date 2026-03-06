@@ -39,34 +39,41 @@ def format_faq_for_prompt(faq_data: list[dict]) -> str:
 def parse_answer_and_sources(model_output: str) -> tuple[str, list[int]]:
     """
     Extract answer text and source IDs from model output.
-    Expected format: "Answer: <text>\\nSource IDs: 1, 3" or "Source IDs: 1, 3\\nAnswer: <text>".
+    Two-step extraction: (1) collect all source-ID material into one string via regex;
+    (2) extract all numeric IDs from that string, dedupe preserving order.
+    Handles "Source IDs: 1, 3", "Source IDs: [1, 3]", inline "[1], [3]", and mixed.
     Fallback: return (whole response, []).
     """
     if not model_output or not model_output.strip():
         return ("", [])
     text = model_output.strip()
-    source_ids: list[int] = []
-    # Try "Source IDs: 1, 3" or "Sources: 1, 3" (flexible)
+
+    # Step 1: Build one string containing all "source ID material"
+    parts: list[str] = []
+    # Line-based: "Source IDs: ..." or "Sources: ..." — capture rest of line
     for pattern in [
-        r"[Ss]ource\s*IDs?\s*:\s*([\d\s,]+)",
-        r"[Ss]ources?\s*:\s*([\d\s,]+)",
+        r"[Ss]ource\s*IDs?\s*:\s*([^\n]+)",
+        r"[Ss]ources?\s*:\s*([^\n]+)",
     ]:
-        m = re.search(pattern, text, re.IGNORECASE)
-        if m:
-            raw = m.group(1)
-            for part in raw.replace(",", " ").split():
-                if part.isdigit():
-                    source_ids.append(int(part))
-            source_ids = list(dict.fromkeys(source_ids))  # preserve order, dedupe
-            break
-    # Remove the Source IDs line from text to get answer only
+        for m in re.finditer(pattern, text, re.IGNORECASE):
+            parts.append(m.group(1).strip())
+    # Bracket list and inline [n]: capture inside brackets
+    for m in re.finditer(r"\[([\d,\s]+)\]", text):
+        parts.append(m.group(1).strip())
+    combined_string = " ".join(parts)
+
+    # Step 2: Extract all numeric IDs, dedupe preserving order
+    source_ids = list(
+        dict.fromkeys(int(x) for x in re.findall(r"\d+", combined_string))
+    )
+
+    # Answer: remove Source IDs / Sources lines (full line), then extract "Answer: ..."
     answer = text
     for pattern in [
-        r"\n?[Ss]ource\s*IDs?\s*:\s*[\d\s,]+\s*",
-        r"\n?[Ss]ources?\s*:\s*[\d\s,]+\s*",
+        r"\n?[Ss]ource\s*IDs?\s*:[^\n]*",
+        r"\n?[Ss]ources?\s*:[^\n]*",
     ]:
         answer = re.sub(pattern, "\n", answer, flags=re.IGNORECASE)
-    # Extract "Answer: ..." if present
     answer_m = re.search(r"[Aa]nswer\s*:\s*(.+)", answer, re.DOTALL)
     if answer_m:
         answer = answer_m.group(1).strip()
@@ -74,7 +81,23 @@ def parse_answer_and_sources(model_output: str) -> tuple[str, list[int]]:
         answer = re.sub(r"^[Aa]nswer\s*:\s*", "", answer).strip()
     if not answer:
         answer = text.strip()
+    # Strip "Memory Used: True/False" line so it is not shown in the UI
+    answer = re.sub(r"\n?[Mm]emory\s+[Uu]sed\s*:\s*(True|False)\s*", "\n", answer).strip()
     return (answer, source_ids)
+
+
+def parse_memory_used(model_output: str) -> bool:
+    """
+    Look for a line "Memory Used: True" or "Memory Used: False" in model output.
+    Return True only when the value is True (case-insensitive); otherwise False.
+    If no match, return False (do not claim memory was used).
+    """
+    if not model_output or not model_output.strip():
+        return False
+    m = re.search(r"[Mm]emory\s+[Uu]sed\s*:\s*(True|False)", model_output)
+    if not m:
+        return False
+    return m.group(1).lower() == "true"
 
 
 def build_sources_from_ids(faq_data: list[dict], source_ids: list[int]) -> list[dict]:
@@ -92,53 +115,53 @@ def build_sources_from_ids(faq_data: list[dict], source_ids: list[int]) -> list[
     return sources
 
 
-def _normalize(text: str) -> str:
-    """Lowercase and collapse whitespace for scoring."""
-    return " ".join(re.sub(r"[^a-z0-9\s]", "", text.lower()).split())
+# def _normalize(text: str) -> str:
+#     """Lowercase and collapse whitespace for scoring."""
+#     return " ".join(re.sub(r"[^a-z0-9\s]", "", text.lower()).split())
 
 
-def score_entry(query: str, entry: dict) -> float:
-    """
-    Score one FAQ entry against the query. Higher = better match.
-    Uses word overlap between query and (question + answer + category).
-    """
-    q = _normalize(query)
-    if not q:
-        return 0.0
-    combined = _normalize(
-        f"{entry.get('category', '')} {entry.get('question', '')} {entry.get('answer', '')}"
-    )
-    query_words = set(q.split())
-    text_words = set(combined.split())
-    overlap = len(query_words & text_words)
-    # Prefer entries where more of the query words appear
-    return overlap / len(query_words) if query_words else 0.0
+# def score_entry(query: str, entry: dict) -> float:
+#     """
+#     Score one FAQ entry against the query. Higher = better match.
+#     Uses word overlap between query and (question + answer + category).
+#     """
+#     q = _normalize(query)
+#     if not q:
+#         return 0.0
+#     combined = _normalize(
+#         f"{entry.get('category', '')} {entry.get('question', '')} {entry.get('answer', '')}"
+#     )
+#     query_words = set(q.split())
+#     text_words = set(combined.split())
+#     overlap = len(query_words & text_words)
+#     # Prefer entries where more of the query words appear
+#     return overlap / len(query_words) if query_words else 0.0
 
 
-def score_query_with_history(
-    current_query: str,
-    conversation_history: list[dict] | None,
-    threshold: float = 0.2,
-) -> bool:
-    """
-    Decide whether to use conversation history based on topic continuity.
-    Considers the past 6 turns, scores current query against prior user messages only.
-    Returns True if max overlap with any of the last 3 user messages >= threshold.
-    """
-    if not conversation_history or not current_query: # Potential problem? Missing query, what happens?
-        return False
-    recent = conversation_history[-6:]
-    user_contents = [t["content"] for t in recent if t.get("role") == "user"]
-    prior_user_queries = user_contents[-3:]  # at most 3 prior user messages
-    if not prior_user_queries:
-        return False
-    scores = []
-    for prior_text in prior_user_queries:
-        # Reuse score_entry: treat prior user message as a minimal "entry"
-        entry = {"category": "", "question": prior_text, "answer": ""}
-        scores.append(score_entry(current_query, entry))
-    topic_score = max(scores) if scores else 0.0
-    return topic_score >= threshold
+# def score_query_with_history(
+#     current_query: str,
+#     conversation_history: list[dict] | None,
+#     threshold: float = 0.2,
+# ) -> bool:
+#     """
+#     Decide whether to use conversation history based on topic continuity.
+#     Considers the past 6 turns, scores current query against prior user messages only.
+#     Returns True if max overlap with any of the last 3 user messages >= threshold.
+#     """
+#     if not conversation_history or not current_query: # Potential problem? Missing query, what happens?
+#         return False
+#     recent = conversation_history[-6:]
+#     user_contents = [t["content"] for t in recent if t.get("role") == "user"]
+#     prior_user_queries = user_contents[-3:]  # at most 3 prior user messages
+#     if not prior_user_queries:
+#         return False
+#     scores = []
+#     for prior_text in prior_user_queries:
+#         # Reuse score_entry: treat prior user message as a minimal "entry"
+#         entry = {"category": "", "question": prior_text, "answer": ""}
+#         scores.append(score_entry(current_query, entry))
+#     topic_score = max(scores) if scores else 0.0
+#     return topic_score >= threshold
 
 
 # def retrieve(
@@ -189,11 +212,17 @@ For login or password issues, direct users to use "Forgot username or password" 
 
 You must reply in this exact format:
 Answer: <your answer here>
-Source IDs: <comma-separated list of FAQ entry numbers you used, e.g. 1, 3>"""
+Source IDs: <comma-separated list of FAQ entry numbers you used, e.g. 1, 3>
+Consider whether you used the past conversation (the last 2 exchanges) to answer. If yes, output Memory Used: True; otherwise Memory Used: False.
+
+Final format (three lines):
+Answer: <text>
+Source IDs: <list>
+Memory Used: <True|False>"""
 
     user_block = ""
     if conversation_history:
-        for turn in conversation_history[-6:]:
+        for turn in conversation_history[-4:]:
             role = turn.get("role", "")
             content = turn.get("content", "")
             user_block += f"({role}): {content}\n"
@@ -206,13 +235,14 @@ Source IDs: <comma-separated list of FAQ entry numbers you used, e.g. 1, 3>"""
     messages = [{"role": "system", "content": system}, {"role": "user", "content": prompt}]
     response = ollama.chat(model=model, messages=messages)
     raw = (response.get("message") or {}).get("content", "").strip()
-
     answer, source_ids = parse_answer_and_sources(raw)
+    memory_used_bool = parse_memory_used(raw)
     sources = build_sources_from_ids(faq_data, source_ids)
 
     return {
         "answer": answer,
         "sources": sources,
+        "memory_used": memory_used_bool,
     }
 
 
@@ -228,12 +258,12 @@ def run_query(
     """
     if faq_data is None:
         faq_data = load_faq()
-    use_history = score_query_with_history(query, conversation_history)
-    history = conversation_history if use_history else None
+    # use_history = score_query_with_history(query, conversation_history)
+    # history = conversation_history if use_history else None
     return answer_with_sources(
         query,
         faq_data,
-        conversation_history=history,
+        conversation_history=conversation_history,
         model=model,
     )
 

@@ -33,19 +33,19 @@ def read_root():
 @app.post("/chat", response_model=dict)
 def send_query(user_query: Query):
     query_text = (user_query.query or "").strip()
-    if not query_text:
+    if not query_text: # For the sake of other interactions not using this associated UI, to at least provide a way to handle empty queries.
         return {
             "answer": "Please ask a question about Epic Vendor Services.",
             "sources": [],
-            "memory_used": memory_used(),
+            "memory_used": False,
         }
 
-    chat_history = get_recent_turns(6)
-    did_memory_use = memory_used()
+    chat_history = get_recent_turns(4)
 
     res = run_query(query_text, conversation_history=chat_history, faq_data=json_faq)
     res_ans = res["answer"]
     res_sources = res["sources"]
+    res_memory = res.get("memory_used", False)
 
     add_turn(role="user", content=query_text)
     add_turn(role="assistant", content=res_ans)
@@ -53,6 +53,6 @@ def send_query(user_query: Query):
     return {
         "answer": res_ans,
         "sources": res_sources,
-        "memory_used": did_memory_use,
+        "memory_used": res_memory,
     }
 
