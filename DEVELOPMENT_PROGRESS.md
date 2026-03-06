@@ -38,7 +38,7 @@ epic-support-copilot/
 
 - Created Basic UI
 
-- Eliminate unused code componenents
+- Eliminated unused code componenents
 
 - Corrected (relatively) AI behavior
     - Irrelevance (what's the capital of France?) -> fix via adjusting min_score in engine.py (adjust run_query to use new param)
@@ -46,12 +46,3 @@ epic-support-copilot/
 - Using a new model (final choice: llama3.2:3b)
     - allows for more context, send FAQ seed data into model with user query
     - went from 1B to 8B to 3B, tried 8B again for accuracy, but 3B is the sweet spot for speed and accuracy.
-
-## Used functions and cleaning house(DELETE LATER):
-- run_query
-- load_faq
-- answer_with_sources
-- format_faq_for_prompt
-- parse_answer_and_sources
-- parse_memory_used
-- build_sources_from_ids

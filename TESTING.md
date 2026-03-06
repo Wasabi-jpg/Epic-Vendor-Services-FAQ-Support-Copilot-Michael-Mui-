@@ -12,13 +12,12 @@
 - Test memory used -> works and is referrenced, formerly using brittle engine, now involving model to decide whether to use memory or not.
 
 
-
-
-
-
-
 ## Add Test Suite (Project Test Suite) (fully fleshed out)
 check tests folder, where we tested engine.py and memory.py
+**Run tests:**
+```bash
+pytest
+```
 
 ## Highlighting AI prompting 
 - Cursor wasn't as powerful as expected, although it definitely has good capabilities when
