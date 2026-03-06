@@ -18,7 +18,7 @@
 
 
 ## Add Test Suite (Project Test Suite) (fully fleshed out)
-check tests folder, where we tested engine.py and (TODO) memory.py
+check tests folder, where we tested engine.py and memory.py
 
 ## Highlighting AI prompting 
 - Cursor wasn't as powerful as expected, although it definitely has good capabilities when

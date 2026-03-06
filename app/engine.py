@@ -115,73 +115,7 @@ def build_sources_from_ids(faq_data: list[dict], source_ids: list[int]) -> list[
     return sources
 
 
-# def _normalize(text: str) -> str:
-#     """Lowercase and collapse whitespace for scoring."""
-#     return " ".join(re.sub(r"[^a-z0-9\s]", "", text.lower()).split())
 
-
-# def score_entry(query: str, entry: dict) -> float:
-#     """
-#     Score one FAQ entry against the query. Higher = better match.
-#     Uses word overlap between query and (question + answer + category).
-#     """
-#     q = _normalize(query)
-#     if not q:
-#         return 0.0
-#     combined = _normalize(
-#         f"{entry.get('category', '')} {entry.get('question', '')} {entry.get('answer', '')}"
-#     )
-#     query_words = set(q.split())
-#     text_words = set(combined.split())
-#     overlap = len(query_words & text_words)
-#     # Prefer entries where more of the query words appear
-#     return overlap / len(query_words) if query_words else 0.0
-
-
-# def score_query_with_history(
-#     current_query: str,
-#     conversation_history: list[dict] | None,
-#     threshold: float = 0.2,
-# ) -> bool:
-#     """
-#     Decide whether to use conversation history based on topic continuity.
-#     Considers the past 6 turns, scores current query against prior user messages only.
-#     Returns True if max overlap with any of the last 3 user messages >= threshold.
-#     """
-#     if not conversation_history or not current_query: # Potential problem? Missing query, what happens?
-#         return False
-#     recent = conversation_history[-6:]
-#     user_contents = [t["content"] for t in recent if t.get("role") == "user"]
-#     prior_user_queries = user_contents[-3:]  # at most 3 prior user messages
-#     if not prior_user_queries:
-#         return False
-#     scores = []
-#     for prior_text in prior_user_queries:
-#         # Reuse score_entry: treat prior user message as a minimal "entry"
-#         entry = {"category": "", "question": prior_text, "answer": ""}
-#         scores.append(score_entry(current_query, entry))
-#     topic_score = max(scores) if scores else 0.0
-#     return topic_score >= threshold
-
-
-# def retrieve(
-#     query: str,
-#     faq_data: list[dict] | None = None,
-#     top_k: int = 3,
-#     min_score: float = 0.0,
-# ) -> list[dict]:
-#     """
-#     Return top_k FAQ entries most relevant to the query.
-#     Each returned dict includes the original entry; optionally add a "score" key for debugging.
-#     """
-#     if faq_data is None:
-#         faq_data = load_faq()
-#     if not query or not faq_data:
-#         return []
-#     scored = [(e, score_entry(query, e)) for e in faq_data]
-#     scored = [(e, s) for e, s in scored if s >= min_score]
-#     scored.sort(key=lambda x: -x[1])
-#     return [e for e, _ in scored[:top_k]]
 
 
 # Default model: larger model for reasoning over full FAQ (Option C source grounding).
